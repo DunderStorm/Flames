@@ -4,10 +4,11 @@
 #define COLOR_ORDER GRB
 #define CHIPSET     WS2811
 #define NUM_LEDS    56
+#define HALFLEDS    NUM_LEDS/2
 
 #define BRIGHTNESS  200
 #define FRAMES_PER_SECOND 50
-#define SPARKING 200
+#define SPARKING 220
 #define COOLDOWN 6
 
 
@@ -19,6 +20,7 @@ void setup() {
   delay(300); // sanity delay
   FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness( BRIGHTNESS );
+  FastLED.setTemperature(Tungsten100W);
   
   //debug setup
   Serial.begin(57600);
@@ -33,8 +35,8 @@ void loop()
   //if (random8() > 254) 
   //  superSpark = 32000;
 
-  RisingFire(0, 28, false, random8(), superSpark);
-  RisingFire(29, 55, true, random8(), superSpark);
+  RisingFire(0, HALFLEDS, false, random8(), superSpark);
+  RisingFire(HALFLEDS+1, NUM_LEDS-1, true, random8(), superSpark);
   heatToColor();
   FastLED.show(BRIGHTNESS); // display this frame
 
@@ -71,15 +73,16 @@ void RisingFire(int low, int high, bool inverted, int spark, int superSpark){
     int y = start;
     int igniteHeat;
 
+
     if (superSpark > 0) 
       igniteHeat = superSpark;
     else
-      igniteHeat = min(heat[y] + random8(20,70)+0, 255);
+      igniteHeat = min(heat[y] + random8(20,50)+0, 255);
 
     heat[y] = igniteHeat;
 
     //produce area of effect
-    for(int i = 1; i < 10;i++){
+    for(int i = 1; i < 20;i++){
       if ((y-i)>=low)
         heat[y-i] = min(heat[y-i]+(igniteHeat>>(i)), 255);
       if ((y+i)< high)
