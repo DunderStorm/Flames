@@ -1,15 +1,23 @@
-#include <FastLED.h>
+// Code for producing flame effects with "neopixels" on an arduino compatible device
+// Requires the fastLED library
+// Each element is assigned a heat value from 0 - 255 and which is then converted to a color analogous to black body radiation
+// (it starts at whites and then gets yellow, orange, red and black as it cools down) 
+// Sparks are created at the edges of the strip and then "rises" towards the center of the strip.
+// Somewhat based on the Fire2012 example from the fastLED library
+// Feel free to steal and use for something cool, and please share it further.
 
+#include <FastLED.h>
 #define LED_PIN     17
 #define COLOR_ORDER GRB
 #define CHIPSET     WS2811
-#define NUM_LEDS    56
-#define HALFLEDS    NUM_LEDS/2
 
-#define BRIGHTNESS  200
-#define FRAMES_PER_SECOND 50
-#define SPARKING 220
-#define COOLDOWN 6
+#define NUM_LEDS    56 //Nmber of LEDs in the strip
+#define HALFLEDS    NUM_LEDS/2 //The half point, i.e. where the flames meet
+
+#define BRIGHTNESS  200 //Brightness of the effect, use 255 for maximumbrightness or something lower to save batteries
+#define FRAMES_PER_SECOND 50 //Speed on the animation
+#define SPARKING 220    // how often a new spark will be produced, 255 is max
+#define COOLDOWN 6      // how fast a spark will cool down 
 
 
 CRGB leds[NUM_LEDS];
@@ -22,31 +30,23 @@ void setup() {
   FastLED.setBrightness( BRIGHTNESS );
   FastLED.setTemperature(Tungsten100W);
   
-  //debug setup
+  //debug stuff
   Serial.begin(57600);
   pinMode(0, OUTPUT);
 }
 
 void loop()
 {
-  int spark = random8();
-  int superSpark = 0;
-
-  //if (random8() > 254) 
-  //  superSpark = 32000;
-
-  RisingFire(0, HALFLEDS, false, random8(), superSpark);
-  RisingFire(HALFLEDS+1, NUM_LEDS-1, true, random8(), superSpark);
+  RisingFire(0, HALFLEDS, false, random8());
+  RisingFire(HALFLEDS+1, NUM_LEDS-1, true, random8());
   heatToColor();
   FastLED.show(BRIGHTNESS); // display this frame
 
-  digitalWrite(0, HIGH);
   FastLED.delay(1000 / FRAMES_PER_SECOND);
-  digitalWrite(0, LOW);
 }
 
 
-void RisingFire(int low, int high, bool inverted, int spark, int superSpark){
+void RisingFire(int low, int high, bool inverted, int spark){
   int start;
   
   if (inverted){
@@ -73,11 +73,7 @@ void RisingFire(int low, int high, bool inverted, int spark, int superSpark){
     int y = start;
     int igniteHeat;
 
-
-    if (superSpark > 0) 
-      igniteHeat = superSpark;
-    else
-      igniteHeat = min(heat[y] + random8(20,50)+0, 255);
+    igniteHeat = min(heat[y] + random8(20,50)+0, 255); //if you tune these numbers, you can make the flames more voilent and chaotic
 
     heat[y] = igniteHeat;
 
@@ -92,7 +88,7 @@ void RisingFire(int low, int high, bool inverted, int spark, int superSpark){
 }
 
 void heatToColor(){
-    // Map from heat cells to LED colors
+  //Map from heat cells to LED colors
   for( int j = 0; j < NUM_LEDS; j++) {
     CRGB color = HeatColor(heat[j]);
       leds[j] = color;
@@ -100,6 +96,7 @@ void heatToColor(){
 }
 
 /*
+// alternate function that produces "static glow" that does not move upwards
 void StaticFire()
 {
 // Array of temperature readings at each simulation cell
